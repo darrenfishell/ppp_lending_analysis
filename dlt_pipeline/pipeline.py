@@ -12,6 +12,16 @@ from urllib.parse import urljoin
 db_name = 'ppp_loan_analysis' + '.duckdb'
 raw_data_dir = Path(__file__).parents[1] / 'data' / 'raw_data'
 
+def download_csv(url, verify=True, filename=None):
+    filename = Path(url).name
+    filepath = raw_data_dir / filename
+    if not filepath.exists():
+        with requests.get(url, verify=verify) as r:
+            r.raise_for_status()
+            with open(filepath, 'w', encoding='utf-8') as outfile:
+                outfile.write(r.text)
+    return filepath
+
 @dlt.source
 def small_business_administration():
 
@@ -77,20 +87,10 @@ def small_business_administration():
 @dlt.source()
 def census_bureau():
 
-    def download_csv(url):
-        filename = Path(url).name
-        filepath = raw_data_dir / filename
-        if not filepath.exists():
-            with requests.get(url, verify=False) as r:
-                r.raise_for_status()
-                with open(filepath, 'w', encoding='utf-8') as outfile:
-                    outfile.write(r.text)
-        return filepath
-
     @dlt.resource(write_disposition='replace')
     def state_crosswalk():
         url = 'https://www2.census.gov/geo/docs/reference/state.txt'
-        filepath = download_csv(url)
+        filepath = download_csv(url, verify=False)
         df = pd.read_csv(filepath, sep='|')
         yield df.to_dict(orient='records')
 
@@ -102,6 +102,18 @@ def census_bureau():
         yield df.to_dict(orient='records')
 
     return state_crosswalk, census_2020_estimates
+
+@dlt.source()
+def harvard_elections():
+
+    @dlt.resource(write_disposition='replace')
+    def county_election_results():
+        url = 'https://dataverse.harvard.edu/api/access/datafile/11739050?format=original&gbrecs=true'
+        filepath = download_csv(url, filename='election_results_2000-2024.csv')
+        df = pd.read_csv(filepath, low_memory=False)
+        yield df.to_dict(orient='records')
+
+    return county_election_results
 
 def main(dev_mode=False):
 
@@ -115,7 +127,8 @@ def main(dev_mode=False):
 
     sources = [
         small_business_administration(),
-        census_bureau()
+        # census_bureau(),
+        harvard_elections()
     ]
 
     bronze_load_info = pipeline.run(sources)
