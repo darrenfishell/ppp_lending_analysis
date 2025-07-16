@@ -1,0 +1,13 @@
+sources:
+  - name: ppp_loan_analysis
+    description: 'PPP lending records from SBA'
+    schema: bronze
+    tables:
+      - name: paycheck_protection_loans
+
+  - name: census_bureau
+    description: 'Census context by county'
+    schema: bronze
+    tables:
+      - name: census_2020_estimates
+      - name: state_crosswalk
