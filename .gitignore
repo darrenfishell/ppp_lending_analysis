@@ -14,4 +14,4 @@ secrets.toml
 /.project
 .dlt
 /logs
-/data/raw_data
+data/raw_data
