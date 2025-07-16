@@ -123,29 +123,32 @@ def harvard_elections():
 @dlt.source()
 def qcew():
 
-    qcew_years = [2020]
+    qcew_years = [2019, 2020]
 
-    @dlt.resource(write_disposition='replace')
+    @dlt.resource(parallelized=True)
     def qcew_area_codes():
         url = 'https://data.bls.gov/cew/doc/titles/area/area_titles.csv'
         records = retrieve_csv(url, filename='qcew_area_titles.csv')
-        yield records
+        for record in records:
+            print(record)
+            yield record
 
     @dlt.transformer(
         write_disposition='merge',
-        primary_key=['area_fips', 'own_code', 'industry_code', 'year', 'qtr']
+        primary_key=['area_fips', 'own_code', 'industry_code', 'year', 'qtr'],
+        parallelized=True
     )
-    def qcew_annual_average(area_list):
+    def qcew_annual_average(area):
+
         for year in qcew_years:
-            for area in area_list:
-                area_fips = area['area_fips']
-                url = f'http://data.bls.gov/cew/data/api/{year}/a/area/{area_fips}.csv'
-                try:
-                    df = pd.read_csv(url)
-                    records = df.to_dict(orient='records')
-                    yield records
-                except Exception as e:
-                    print(f'Error loading for {area_fips}: {e}')
+            area_fips = area['area_fips']
+            url = f'http://data.bls.gov/cew/data/api/{year}/a/area/{area_fips}.csv'
+            try:
+                df = pd.read_csv(url)
+                records = df.to_dict(orient='records')
+                yield records
+            except Exception as e:
+                print(f'Error loading for {area_fips}: {e}')
 
     return (qcew_area_codes,
             qcew_area_codes | qcew_annual_average)
