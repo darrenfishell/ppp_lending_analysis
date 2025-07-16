@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 db_name = 'ppp_loan_analysis' + '.duckdb'
 raw_data_dir = Path(__file__).parents[1] / 'data' / 'raw_data'
 
-def download_csv(url, verify=True, filename=None):
+def retrieve_csv(url, verify=True, filename=None, sep=','):
     filename = Path(url).name
     filepath = raw_data_dir / filename
     if not filepath.exists():
@@ -20,7 +20,9 @@ def download_csv(url, verify=True, filename=None):
             r.raise_for_status()
             with open(filepath, 'w', encoding='utf-8') as outfile:
                 outfile.write(r.text)
-    return filepath
+    df = pd.read_csv(filepath, sep=sep, low_memory=False)
+    df_dict = df.to_dict(orient='records')
+    return df_dict
 
 @dlt.source
 def small_business_administration():
@@ -90,16 +92,14 @@ def census_bureau():
     @dlt.resource(write_disposition='replace')
     def state_crosswalk():
         url = 'https://www2.census.gov/geo/docs/reference/state.txt'
-        filepath = download_csv(url, verify=False)
-        df = pd.read_csv(filepath, sep='|')
-        yield df.to_dict(orient='records')
+        records = retrieve_csv(url, verify=False)
+        yield records
 
     @dlt.resource(write_disposition='replace')
     def census_2020_estimates():
         url = r'https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/asrh/cc-est2019-alldata.csv'
-        filepath = download_csv(url)
-        df = pd.read_csv(filepath, low_memory=False)
-        yield df.to_dict(orient='records')
+        records = retrieve_csv(url)
+        yield records
 
     return state_crosswalk, census_2020_estimates
 
@@ -109,11 +109,40 @@ def harvard_elections():
     @dlt.resource(write_disposition='replace')
     def county_election_results():
         url = 'https://dataverse.harvard.edu/api/access/datafile/11739050?format=original&gbrecs=true'
-        filepath = download_csv(url, filename='election_results_2000-2024.csv')
-        df = pd.read_csv(filepath, low_memory=False)
-        yield df.to_dict(orient='records')
+        records = retrieve_csv(url, filename='election_results_2000-2024.csv')
+        yield records
 
     return county_election_results
+
+@dlt.source()
+def qcew():
+
+    qcew_years = [2020]
+
+    @dlt.resource(write_disposition='replace')
+    def qcew_area_codes():
+        url = 'https://data.bls.gov/cew/doc/titles/area/area_titles.csv'
+        records = retrieve_csv(url, filename='qcew_area_titles.csv')
+        yield records
+
+    @dlt.transformer(
+        write_disposition='merge',
+        primary_key=['area_fips', 'own_code', 'industry_code', 'year', 'qtr']
+    )
+    def qcew_annual_average(area_list):
+        for year in qcew_years:
+            for area in area_list:
+                area_fips = area['area_fips']
+                url = f'http://data.bls.gov/cew/data/api/{year}/a/area/{area_fips}.csv'
+                try:
+                    df = pd.read_csv(url)
+                    records = df.to_dict(orient='records')
+                    yield records
+                except Exception as e:
+                    print(f'Error loading for {area_fips}: {e}')
+
+    return (qcew_area_codes,
+            qcew_area_codes | qcew_annual_average)
 
 def main(dev_mode=False):
 
@@ -128,7 +157,8 @@ def main(dev_mode=False):
     sources = [
         small_business_administration(),
         # census_bureau(),
-        harvard_elections()
+        # harvard_elections(),
+        qcew()
     ]
 
     bronze_load_info = pipeline.run(sources)
