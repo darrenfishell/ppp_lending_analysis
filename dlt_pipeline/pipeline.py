@@ -8,6 +8,7 @@ import duckdb
 
 from pathlib import Path
 from urllib.parse import urljoin
+from dlt.sources.rest_api import RESTClient
 
 db_name = 'ppp_loan_analysis' + '.duckdb'
 raw_data_dir = Path(__file__).parents[1] / 'data' / 'raw_data'
@@ -15,14 +16,19 @@ raw_data_dir = Path(__file__).parents[1] / 'data' / 'raw_data'
 def retrieve_csv(url, verify=True, filename=None, sep=','):
     filename = Path(url).name
     filepath = raw_data_dir / filename
+
     if not filepath.exists():
-        with requests.get(url, verify=verify) as r:
-            r.raise_for_status()
-            with open(filepath, 'w', encoding='utf-8') as outfile:
-                outfile.write(r.text)
+        session = requests.Session()
+        session.verify = verify
+        client = RESTClient(url, session)
+
+        r = client.get(path='', session=session)
+        r.raise_for_status()
+        with open(filepath, 'w', encoding='utf-8') as outfile:
+            outfile.write(r.text)
+
     df = pd.read_csv(filepath, sep=sep, low_memory=False)
-    df_dict = df.to_dict(orient='records')
-    return df_dict
+    return df.to_dict(orient='records')
 
 @dlt.source
 def small_business_administration():
