@@ -11,3 +11,9 @@ sources:
     tables:
       - name: census_2020_estimates
       - name: state_crosswalk
+
+  - name: harvard_elections
+    description: 'Harvard election results by county'
+    schema: bronze
+    tables:
+      - name: county_election_results
