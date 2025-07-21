@@ -126,10 +126,13 @@ def qcew():
 
     qcew_years = [2019, 2020]
 
-    @dlt.resource()
+    @dlt.resource(
+        write_disposition='replace'
+    )
     def qcew_area_codes():
         url = 'https://data.bls.gov/cew/doc/titles/area/area_titles.csv'
         records = retrieve_csv(url, filename='qcew_area_titles.csv')
+        print(f'Collected QCEW area titles')
         yield records
 
     @dlt.transformer(
@@ -138,16 +141,24 @@ def qcew():
         parallelized=True
     )
     def qcew_annual_average(area_list):
+        """
+        :param area_list:
+        :return: Industry totals and 2-digit NAICS totals
+        from QCEW source.
+        """
         for area in area_list:
+            area_fips = area['area_fips']
             for year in qcew_years:
-                area_fips = area['area_fips']
                 url = f'http://data.bls.gov/cew/data/api/{year}/a/area/{area_fips}.csv'
                 try:
-                    df = pd.read_csv(url)
-                    records = df.to_dict(orient='records')
-                    yield records
+                    yield (duckdb.execute("""
+                        SELECT *
+                        FROM read_csv_auto($url) q
+                        WHERE (agglvl_code = 74 OR industry_code = '10')
+                        AND own_code = 5
+                    """, {'url': url}).df().to_dict(orient='records'))
                 except Exception as e:
-                    tqdm.write(f"❌ Error collecting {area_fips}: {e}")
+                    tqdm.write(f"❌ Error collecting {area_fips}-{year}: {e}")
 
     return (qcew_area_codes,
             qcew_area_codes | qcew_annual_average)
