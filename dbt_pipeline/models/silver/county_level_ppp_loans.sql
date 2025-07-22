@@ -1,6 +1,6 @@
 SELECT
-	p.project_county_name,
 	s.state_name,
+	p.project_county_name,
 	sum(initial_approval_amount) as initial_approval_amount,
 	sum(current_approval_amount) as current_approval_amount,
 	sum(payroll_proceed) as payroll_proceed,
