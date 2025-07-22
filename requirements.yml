@@ -1,0 +1,19 @@
+name: ppp_lending_analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - dlt
+  - duckdb
+  - pandas
+  - scikit-learn
+  - scipy
+  - seaborn
+  - dbt-core
+  - beautifulsoup4
+  - notebook
+  - tqdm
+  - dbt-duckdb
+  - xlrd
+prefix: /Users/Darren/miniconda3/envs/ppp_lending_analysis
