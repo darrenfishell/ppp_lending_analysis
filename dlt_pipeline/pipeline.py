@@ -98,21 +98,32 @@ def small_business_administration():
     return paycheck_protection_loans
 
 @dlt.source()
+def usda():
+
+    @dlt.resource
+    def rural_urban_2013_codes():
+        xls_url = 'https://ers.usda.gov/sites/default/files/_laserfiche/DataFiles/53251/ruralurbancodes2013.xls?v=62927'
+        df = pd.read_excel(xls_url)
+        yield df.to_dict(orient='records')
+
+    return rural_urban_2013_codes
+
+@dlt.source()
 def census_bureau():
 
     @dlt.resource(write_disposition='replace')
     def state_crosswalk():
         url = 'https://www2.census.gov/geo/docs/reference/state.txt'
-        records = retrieve_csv(url, verify=False)
+        records = retrieve_csv(url, verify=False, sep='|')
         yield records
 
     @dlt.resource(write_disposition='replace')
-    def census_2020_estimates():
+    def census_2019_estimates():
         url = r'https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/asrh/cc-est2019-alldata.csv'
         records = retrieve_csv(url)
         yield records
 
-    return state_crosswalk, census_2020_estimates
+    return state_crosswalk, census_2019_estimates
 
 @dlt.source()
 def harvard_elections():
@@ -194,6 +205,7 @@ def main(dev_mode=False):
     sources = [
         small_business_administration(),
         census_bureau(),
+        usda(),
         harvard_elections(),
         qcew()
     ]
