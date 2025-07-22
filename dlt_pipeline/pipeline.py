@@ -5,7 +5,9 @@ import re
 import requests
 import os
 import duckdb
+import zipfile
 
+from io import BytesIO
 from tqdm import tqdm
 from pathlib import Path
 from urllib.parse import urljoin
@@ -21,9 +23,9 @@ def retrieve_csv(url, verify=True, filename=None, sep=','):
     if not filepath.exists():
         session = requests.Session()
         session.verify = verify
-        client = RESTClient(url, session)
+        client = RESTClient(url, session=session)
 
-        r = client.get(path='', session=session)
+        r = client.get(path='')
         r.raise_for_status()
         with open(filepath, 'w', encoding='utf-8') as outfile:
             outfile.write(r.text)
@@ -124,10 +126,12 @@ def harvard_elections():
 @dlt.source()
 def qcew():
 
+    # Fixed years for PPP analysis
     qcew_years = [2019, 2020]
 
     @dlt.resource(
-        write_disposition='replace'
+        write_disposition='replace',
+        parallelized=True
     )
     def qcew_area_codes():
         url = 'https://data.bls.gov/cew/doc/titles/area/area_titles.csv'
@@ -135,33 +139,45 @@ def qcew():
         print(f'Collected QCEW area titles')
         yield records
 
-    @dlt.transformer(
+    @dlt.resource(
         write_disposition='merge',
         primary_key=['area_fips', 'own_code', 'industry_code', 'year', 'qtr'],
         parallelized=True
     )
-    def qcew_annual_average(area_list):
+    def qcew_annual_average():
         """
         :param area_list:
         :return: Industry totals and 2-digit NAICS totals
-        from QCEW source.
+        from QCEW ZIP with parallelized CSV processing and filtering.
         """
-        for area in area_list:
-            area_fips = area['area_fips']
-            for year in qcew_years:
-                url = f'http://data.bls.gov/cew/data/api/{year}/a/area/{area_fips}.csv'
-                try:
-                    yield (duckdb.execute("""
-                        SELECT *
-                        FROM read_csv_auto($url) q
-                        WHERE (agglvl_code = 74 OR industry_code = '10')
-                        AND own_code = 5
-                    """, {'url': url}).df().to_dict(orient='records'))
-                except Exception as e:
-                    tqdm.write(f"❌ Error collecting {area_fips}-{year}: {e}")
+        @dlt.defer
+        def _process_csv(csv_bytes=None, filename=None):
+            try:
+                df = pd.read_csv(csv_bytes)
+                yield df.to_dict(orient='records')
+            except Exception as e:
+                tqdm.write(f"❌ Error loading {filename}: {e}")
 
-    return (qcew_area_codes,
-            qcew_area_codes | qcew_annual_average)
+        for year in qcew_years:
+            zip_url = f'https://data.bls.gov/cew/data/files/{year}/csv/{year}_annual_by_area.zip'
+            tqdm.write(f'Downloading {zip_url}')
+            zip_content = requests.get(zip_url).content
+            tqdm.write(f'Download complete')
+
+            file_like_zip = BytesIO(zip_content)
+
+            with zipfile.ZipFile(file_like_zip) as zf:
+                zip_paths = [
+                    file for file in zf.namelist()[1:]
+                    if re.search(r'\d{5}', Path(file).name)
+                ]
+                for file in zip_paths:
+                    file_bytes = BytesIO(zf.read(file))
+                    filename = Path(file).name
+                    records = _process_csv(csv_bytes=file_bytes, filename=filename)
+                    yield records
+
+    return qcew_area_codes, qcew_annual_average
 
 def main(dev_mode=False):
 
@@ -175,8 +191,8 @@ def main(dev_mode=False):
 
     sources = [
         small_business_administration(),
-        # census_bureau(),
-        # harvard_elections(),
+        census_bureau(),
+        harvard_elections(),
         qcew()
     ]
 
