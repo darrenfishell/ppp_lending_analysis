@@ -6,6 +6,6 @@ SELECT
 		WHEN rucc_2013 IN (4, 5, 6, 7)
 			THEN 'suburban'
 		WHEN rucc_2013 IN (8, 9)
-			THEN 'urban'
+			THEN 'rural'
 	END as urbanicity
 FROM {{ source('usda', 'rural_urban_2013_codes' ) }}
