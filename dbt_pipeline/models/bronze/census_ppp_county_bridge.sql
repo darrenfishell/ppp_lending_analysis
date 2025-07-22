@@ -1,9 +1,8 @@
-{{ config(materialized='table') }}
-
 SELECT DISTINCT
     s.state_name,
     p.project_county_name,
-    c.ctyname as census_county_name
+    c.ctyname as census_county_name,
+    LPAD(c.state::STRING, 2, '0') || LPAD(c.county::STRING, 3, '0') as area_fips
 FROM {{ source('sba', 'paycheck_protection_loans') }} p
 LEFT JOIN {{ source('census_bureau', 'state_crosswalk') }} s
 ON
