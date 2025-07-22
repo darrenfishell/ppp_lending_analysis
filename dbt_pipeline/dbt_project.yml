@@ -33,7 +33,7 @@ models:
         node_color: "#CD7F32"
 
     silver:
-      +materialized: view
+      +materialized: table
       +schema: silver
       +docs:
         node_color: "#C0C0C0"
