@@ -1,5 +1,5 @@
 sources:
-  - name: ppp_loan_analysis
+  - name: sba
     description: 'PPP lending records from SBA'
     schema: bronze
     tables:
@@ -9,7 +9,7 @@ sources:
     description: 'Census context by county'
     schema: bronze
     tables:
-      - name: census_2020_estimates
+      - name: census_2019_estimates
       - name: state_crosswalk
 
   - name: harvard_elections
@@ -17,3 +17,16 @@ sources:
     schema: bronze
     tables:
       - name: county_election_results
+
+  - name: qcew
+    description: 'Quarterly census of employment and wages'
+    schema: bronze
+    tables:
+      - name: qcew_area_codes
+      - name: qcew_annual_average
+
+  - name: usda
+    description: 'USDA urban-rural codes'
+    schema: bronze
+    tables:
+      - name: rural_urban_2013_codes

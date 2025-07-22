@@ -4,11 +4,11 @@ SELECT DISTINCT
     s.state_name,
     p.project_county_name,
     c.ctyname as census_county_name
-FROM {{ source('ppp_loan_analysis', 'paycheck_protection_loans') }} p
+FROM {{ source('sba', 'paycheck_protection_loans') }} p
 LEFT JOIN {{ source('census_bureau', 'state_crosswalk') }} s
 ON
     p.project_state = s.stusab
-LEFT JOIN {{ source('census_bureau', 'census_2020_estimates') }} c
+LEFT JOIN {{ source('census_bureau', 'census_2019_estimates') }} c
 ON
     s.state_name = c.stname
         AND LOWER(
