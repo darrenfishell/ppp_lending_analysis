@@ -1,5 +1,3 @@
-{{ config(materialized='table') }}
-
 SELECT
     TRY_CAST(RIGHT(county_fips, 3) AS INTEGER) AS county_fips,
     TRY_CAST(LEFT(county_fips, 2) AS INTEGER) AS state_fips,
