@@ -4,6 +4,7 @@ SELECT
 	u.urbanicity as urbanicity,
 	pp.current_approval_amount as ppp_loan_amount,
 	q.total_annual_wages as total_annual_wages,
+	q.yoy_job_change_pct as yoy_job_change_pct,
 	pp.current_approval_amount / q.total_annual_wages as wage_adjusted_ppp_loan_amount,
 	c.white_population / c.total_population as white_pop_share,
 	c.black_population / c.total_population as black_pop_share,
