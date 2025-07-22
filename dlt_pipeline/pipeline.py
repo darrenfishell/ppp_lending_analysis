@@ -17,7 +17,9 @@ db_name = 'ppp_loan_analysis' + '.duckdb'
 raw_data_dir = Path(__file__).parents[1] / 'data' / 'raw_data'
 
 def retrieve_csv(url, verify=True, filename=None, sep=','):
-    filename = Path(url).name
+
+    if filename is None:
+        filename = Path(url).name
     filepath = raw_data_dir / filename
 
     if not filepath.exists():
