@@ -11,7 +11,8 @@ SELECT
 	c.asian_population / c.total_population as asian_pop_share,
 	(c.native_american_population + c.native_hawaiian_pacific_islander_population) / c.total_population as native_pop_share,
 	c.hispanic_population / c.total_population as hispanic_share,
-	e.republican / e.total as trump_share
+	e.republican / e.total as trump_share,
+	lq.* EXCLUDE (area_fips)
 FROM {{ ref('county_level_ppp_loans') }} pp
 JOIN {{ ref('census_ppp_county_bridge') }} b
 ON pp.project_county_name = b.project_county_name
@@ -20,6 +21,8 @@ JOIN {{ ref('county_census_2019') }} c
 ON b.area_fips = c.area_fips
 JOIN {{ ref('county_qcew_summary') }} q
 ON c.area_fips = q.area_fips
+JOIN {{ ref('county_qcew_sector_wages_and_lq') }} lq
+ON c.area_fips = lq.area_fips
 JOIN {{ ref('county_2016_election_results') }} e
 ON b.area_fips = e.area_fips
 JOIN {{ ref('urban_rural_designations') }} u
