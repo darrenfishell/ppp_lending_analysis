@@ -10,10 +10,15 @@ Most concerningly, there was a strong negative relationship between wage-adjuste
 
 ## Detailed analysis
 
-Details of the modeling and model results are available [here](notebooks/regression_analysis.ipynb). 
+Details of the original modeling and results are available [here](notebooks/project_regression_analysis.ipynb). 
 
 ## Future directions
 
-The overall explanatory power (Adj. R^2 of 0.223) is relatively modest and further feature collection and feature engineering should be explored to better understand the relationships detected from this initial analysis. Readily available continuations include the industry makeup of a county (based on QCEW totals). 
+The overall explanatory power (Adj. R^2 of 0.223) in the project analysis is relatively modest and further feature collection and feature engineering should be explored to better understand the relationships detected from this initial analysis. Readily available continuations include the industry makeup of a county (based on QCEW totals). 
 
 Additionally, trends within the PPP data itself warrants exploration for assessment of overall data quality, highlighted by reporting such as [ProPublica's 2021 reporting that found a raft of apparently fraudulent loans](https://www.propublica.org/article/ppp-farms), identified by further research into loan recipients in the data. The reporting "found that Kabbage appears to have originated the most loans to businesses that don’t appear to exist and the only concentration of loans to phantom farms." Kabbage orginated around 180,000 loans, according to SBA data, and any such issues could dramatically skew the results.
+
+## Further feature engineering and results
+
+To start, the existing QCEW data also includes industry-level detail at the county level and is a starting point for further feature engineering. DuckDB pivot operations make this [quick work](dbt_pipeline/models/silver/county_qcew_sector_wages_and_lq.sql), breaking out each sector's wages as a share of total county wages as a new feature.
+
