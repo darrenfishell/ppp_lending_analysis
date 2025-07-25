@@ -71,7 +71,7 @@ def plot_correlation_matrix(data=None, fig_size=(10, 8), annot=True):
     plt.show()
 
 
-def generate_formula_string(target=None, data=None, exclusion_set=None, cat_var_set=None, transform=None):
+def generate_formula_string(target=None, target_transform=None, data=None, exclusion_set=None, cat_var_set=None):
     feature_set = set(data.select_dtypes(include=[np.number]).columns)
 
     # Remove target
@@ -83,10 +83,10 @@ def generate_formula_string(target=None, data=None, exclusion_set=None, cat_var_
     if cat_var_set:
         feature_set = feature_set | cat_var_set
 
-    if transform == 'log':
+    if target_transform == 'log':
         tgt_expression = 'np.log(' + target + ')'
     else:
         tgt_expression = target
 
     feature_str = ' + '.join(sorted(feature_set))
-    return target + ' ~ ' + feature_str
+    return tgt_expression + ' ~ ' + feature_str
