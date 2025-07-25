@@ -2,8 +2,7 @@ WITH wage_share_by_county as (
 	SELECT
 		LPAD(a.area_fips, 5, '0') as area_fips,
 		replace(replace(lower(regexp_split_to_array(a.industry_title, '\d+ ')[2]), ' ', '_'), ',', '') as industry_title,
-		a.total_annual_wages / c.total_annual_wages as sector_wage_share,
-		a.lq_annual_avg_emplvl as job_loc_quotient
+		a.total_annual_wages / c.total_annual_wages as sector_wage_share
 	FROM "ppp_loan_analysis"."bronze"."qcew_annual_average" a
 	JOIN silver.county_qcew_summary c
 	ON c.area_fips::INT = a.area_fips
@@ -16,6 +15,5 @@ FROM (
 	PIVOT wage_share_by_county
 	ON industry_title
 	USING
-		ifnull(MAX(sector_wage_share), 0) as wage_share,
-		ifnull(MAX(job_loc_quotient), 0) as job_loc_quotient
+		ifnull(MAX(sector_wage_share), 0) as wage_share
 )
