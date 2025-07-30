@@ -20,5 +20,5 @@ Additionally, trends within the PPP data itself warrants exploration for assessm
 
 ## Further feature engineering and results
 
-To start, the existing QCEW data also includes industry-level detail at the county level and is a starting point for further feature engineering. DuckDB pivot operations make this [quick work](dbt_pipeline/models/silver/county_qcew_sector_wages_and_lq.sql), breaking out each sector's wages as a share of total county wages as a new feature.
+To start, the existing QCEW data also includes industry-level detail at the county level and is a starting point for further feature engineering. DuckDB pivot operations make this [quick work](dbt_pipeline/models/silver/county_qcew_sector_wages.sql), breaking out each sector's wages as a share of total county wages as a new feature.
 
