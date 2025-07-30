@@ -21,10 +21,14 @@ def evaluate_vifs(model):
 
 def test_model_assumptions(model):
     # Get residuals from your model
-    residuals = model.resid
+    try:
+        residuals = model.resid
+    except AttributeError:
+        residuals = model.resid_response
+
     X_design = model.model.exog
 
-    bp_stat, bp_pvalue, _, _ = het_breuschpagan(model.resid, X_design)
+    bp_stat, bp_pvalue, _, _ = het_breuschpagan(residuals, X_design)
     print(f'bp_stat: {bp_stat} | bp_pvalue: {bp_pvalue}')
 
     # Create diagnostic plots
